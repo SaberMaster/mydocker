@@ -7,10 +7,14 @@ import (
 	"syscall"
 )
 
-func NewParentProcess(tty bool, command string) *exec.Cmd {
-	args := []string{"init", command}
-	cmd := exec.Command("/proc/self/exe", args...)
-	logrus.Infof("init parent process cmd: %v", cmd.Args)
+func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+	readPipe, writePipe, err := os.Pipe()
+	if nil != err {
+		logrus.Errorf("new pipe error %v", err)
+		return nil, nil
+	}
+	cmd := exec.Command("/proc/self/exe", "init")
+	logrus.Info("init parent process cmd: [init]")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
 	}
@@ -20,5 +24,8 @@ func NewParentProcess(tty bool, command string) *exec.Cmd {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-	return cmd
+	// attach the readPipe to the cmd
+	cmd.ExtraFiles = []*os.File{readPipe}
+	// return writePipe to send user cmd
+	return cmd, writePipe
 }

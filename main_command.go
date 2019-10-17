@@ -21,21 +21,24 @@ var runCommand = cli.Command{
 			return fmt.Errorf("missing container cmd")
 		}
 
-		cmd := ctx.Args().Get(0)
+		var cmdArray []string
+		for _, arg := range ctx.Args() {
+			cmdArray = append(cmdArray, arg)
+		}
+
 		tty := ctx.Bool("ti")
-		Run(tty, cmd)
+
+		Run(tty, cmdArray)
 		return nil
 	},
 }
 
 var initCommand = cli.Command{
 	Name:   "init",
-	Usage:  "init container",
+	Usage:  "init container process run user's process in container. Do not call it outside",
 	Action: func(ctx *cli.Context) error {
 		log.Infof("init come on")
-		cmd := ctx.Args().Get(0)
-		log.Infof("init command %s", cmd)
-		err := container.RunContainerInitProcess(cmd, nil)
+		err := container.RunContainerInitProcess()
 		return err
 	},
 }
