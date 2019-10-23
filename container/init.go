@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -17,9 +18,8 @@ func RunContainerInitProcess() error {
 	}
 	logrus.Infof("container user command [%s]", strings.Join(cmdArray, " "))
 
-	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-	// mount proc, or `ps` will search parents proc
-	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	setUpMount()
+
 	// support env var
 	path, err := exec.LookPath(cmdArray[0])
 	if nil != err {
@@ -46,4 +46,62 @@ func readUserCommand() []string {
 	}
 	msgStr := string(msg)
 	return strings.Split(msgStr, " ")
+}
+
+/**
+	init mountPoint
+ */
+func setUpMount()  {
+	pwd, err := os.Getwd()
+
+	if nil != err {
+		logrus.Errorf("Get current location error %v", err)
+	}
+
+	logrus.Infof("Current location is %s", pwd)
+
+	pivotRoot(pwd)
+	// mount proc
+	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
+	// mount proc, or `ps` will search parents proc
+	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+
+	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID | syscall.MS_STRICTATIME, "mode=755")
+}
+
+func pivotRoot(root string) error {
+	// todo bind mount operation
+	//After this call the same contents is accessible in two places.  One can also remount a single file (on a single file). It's also possible to use the bind mount to create a mountpoint from a regular directory, for exam-
+	//	ple:
+	//mount --bind foo foo
+	if err := syscall.Mount(root, root, "bind", syscall.MS_BIND | syscall.MS_REC, ""); nil != err {
+		return fmt.Errorf("mount rootfs to itself error: %v", err)
+	}
+
+	// create dir to mount old_root to new file_system
+	pivotDir := filepath.Join(root, ".pivot_root")
+	if err := os.Mkdir(pivotDir, 0777); nil != err {
+		return err
+	}
+
+	// pivotRoot: moves the root file system of the current process to the directory pivotDir
+	// and makes root the new root file system
+	// after pivot, we will use new filesystem, `root` will be /
+	// so the old filesystem now location is /.pivot_root
+	if err := syscall.PivotRoot(root, pivotDir); nil != err {
+		return fmt.Errorf("pivot_root: %v", err)
+	}
+
+	if err := syscall.Chdir("/"); nil != err {
+		return fmt.Errorf("chdir to / error: %v", err)
+	}
+
+	// unmount old fs
+	pivotDir = filepath.Join("/", ".pivot_root")
+	if err := syscall.Unmount(pivotDir, syscall.MNT_DETACH); nil != err{
+		return fmt.Errorf("unmount pivot_root dir error : %v", err)
+	}
+
+	// remove tmp pivotDir
+	return os.Remove(pivotDir)
 }
