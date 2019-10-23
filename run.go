@@ -34,6 +34,10 @@ func setCgroupAndWaitParentProcess(res *subsystems.ResourceConfig, parent *exec.
 	cgroupManager.Apply(parent.Process.Pid)
 	sendInitCommand(cmdArray, writePipe)
 	parent.Wait()
+	// remove workspace
+	mntURL := "/root/mnt/"
+	rootURL := "/ramdisk/"
+	container.DeleteWorkSpace(rootURL, mntURL)
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
