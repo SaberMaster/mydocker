@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig)  {
-	parent, writePipe := container.NewParentProcess(tty)
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string)  {
+	parent, writePipe := container.NewParentProcess(tty, volume)
 
 	if nil == parent {
 		logrus.Error("new parent process error")
@@ -23,6 +23,7 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig)  {
 	}
 
 	setCgroupAndWaitParentProcess(res, parent, cmdArray, writePipe)
+	removeWorkSpace(volume)
 	os.Exit(0)
 }
 
@@ -34,10 +35,13 @@ func setCgroupAndWaitParentProcess(res *subsystems.ResourceConfig, parent *exec.
 	cgroupManager.Apply(parent.Process.Pid)
 	sendInitCommand(cmdArray, writePipe)
 	parent.Wait()
+}
+
+func removeWorkSpace(volume string)  {
 	// remove workspace
 	mntURL := "/root/mnt/"
 	rootURL := "/ramdisk/"
-	container.DeleteWorkSpace(rootURL, mntURL)
+	container.DeleteWorkSpace(rootURL, mntURL, volume)
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
