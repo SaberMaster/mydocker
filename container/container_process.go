@@ -33,8 +33,9 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	// but overlay fs can't be overlay upperDir and workDir
 	// so i mount ram to a folder
 	// mount -t tmpfs tmpfs /ramdisk/
-	rootURL := "/ramdisk/"
-	NewWorkSpace(rootURL, mntURL, volume)
+	tmpDirRoot := "/ramdisk/mydocker/tmp/"
+	imageTarUrl := "/ramdisk/busybox.tar"
+	NewWorkSpace(tmpDirRoot, mntURL, imageTarUrl, volume)
 	//change current dir to mntURL
 	cmd.Dir = mntURL
 	// attach the readPipe to the cmd
@@ -55,14 +56,14 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func NewWorkSpace(rootURL string, mntURL string, volume string) {
-	CreateReadOnlyLayer(rootURL)
-	CreateWriteLayer(rootURL)
-	CreateMountPoint(rootURL, mntURL, "root")
-	MountVolumeIfNeed(mntURL, volume)
+func NewWorkSpace(tmpDirRoot string, mntURL string, imageTarUrl string, volume string) {
+	readonlyLayer := CreateReadOnlyLayer4Image(tmpDirRoot, imageTarUrl)
+	writeLayer := CreateWriteLayer(tmpDirRoot)
+	CreateMountPoint(tmpDirRoot, readonlyLayer, writeLayer, mntURL)
+	MountVolumeIfNeed(tmpDirRoot, mntURL, volume)
 }
 
-func MountVolumeIfNeed(mntURL string, volume string) {
+func MountVolumeIfNeed(tmpDirRoot string, mntURL string, volume string) {
 	if "" == volume {
 		return
 	}
@@ -73,14 +74,16 @@ func MountVolumeIfNeed(mntURL string, volume string) {
 	if 2 == length &&
 			"" != volumeURLs[0] &&
 			"" != volumeURLs[1] {
-		MountVolume(mntURL, volumeURLs)
+		tmpMountDir := tmpDirRoot + "mounts/"
+		makeDir(tmpMountDir)
+		MountVolume(tmpMountDir, mntURL, volumeURLs)
 		logrus.Infof("%q", volumeURLs)
 	} else {
 		logrus.Infof("Volume parameter input is not correct.")
 	}
 }
 
-func MountVolume(mntURL string, volumeURLs []string) {
+func MountVolume(tmpDirRoot string, mntURL string, volumeURLs []string) {
 	parentURL := volumeURLs[0]
 	logrus.Infof("make parent dir %s", parentURL)
 	makeDir(parentURL)
@@ -89,8 +92,10 @@ func MountVolume(mntURL string, volumeURLs []string) {
 	containerURL := volumeURLs[1]
 	containerVolumeURL := path.Join(mntURL, containerURL)
 
+	readonlyLayer := CreateReadOnlyLayer4MountPoint(tmpDirRoot)
 	// here use overlay to mount, as i test in docker, so the parentURL can't by overlay
-	CreateMountPoint(parentURL, containerVolumeURL, "mount")
+	//tmpDirRoot, lowerDir, upperDir, mntURL
+	CreateMountPoint(tmpDirRoot, readonlyLayer, parentURL, containerVolumeURL)
 }
 
 func volumeUrlExtract(volume string) []string {
@@ -98,24 +103,25 @@ func volumeUrlExtract(volume string) []string {
 }
 
 
-func CreateReadOnlyLayer(rootURL string) {
-	busyboxURL := rootURL + "busybox/"
-	busyboxTarURL := rootURL + "busybox.tar"
+func CreateReadOnlyLayer4Image(tmpDirRoot string, imageTarUrl string) string{
+	containerReadOnlyRoot := tmpDirRoot + "containerReadOnlyRoot/"
 
-	exists, err := PathExists(busyboxURL)
+	exists, err := PathExists(containerReadOnlyRoot)
 	if nil != err {
-		logrus.Infof("Fail to judge whether dir %s exists. %v", busyboxURL, err)
+		logrus.Infof("Fail to judge whether dir %s exists. %v", containerReadOnlyRoot, err)
 	}
 
 	if false == exists {
-		makeDir(busyboxURL)
-		if _, err := exec.Command("tar", "-xvf", busyboxTarURL, "-C", busyboxURL).CombinedOutput(); nil != err {
-			logrus.Errorf("Untar file %s to dir %s error: %v", busyboxTarURL, busyboxURL, err)
+		makeDir(containerReadOnlyRoot)
+		if _, err := exec.Command("tar", "-xvf", imageTarUrl, "-C", containerReadOnlyRoot).CombinedOutput(); nil != err {
+			logrus.Errorf("Untar file %s to dir %s error: %v", imageTarUrl, containerReadOnlyRoot, err)
 		}
 	}
+	return containerReadOnlyRoot
 }
 
 func makeDir(URL string) {
+	logrus.Infof("Mkdir %s", URL)
 	if _, err := os.Stat(URL); nil != err && os.IsNotExist(err){
 		if err := os.Mkdir(URL, 0777); nil != err {
 			logrus.Errorf("Mkdir %s error. %v", URL, err)
@@ -123,26 +129,31 @@ func makeDir(URL string) {
 	}
 }
 
-func CreateWriteLayer(rootURL string) {
-	writeURL := rootURL + "writeLayer/"
+func CreateReadOnlyLayer4MountPoint(tmpDirRoot string) string{
+	readOnlyLayer := tmpDirRoot + "readOnlyLayer/"
+	makeDir(readOnlyLayer)
+	return readOnlyLayer
+}
+
+func CreateWriteLayer(tmpDirRoot string) string{
+	writeURL := tmpDirRoot + "writeLayer/"
 	makeDir(writeURL)
+	return writeURL
 }
 
-func CreateWorkDir4Overlay(rootURL string) {
+func CreateWorkDir4Overlay(tmpDirRoot string) string{
 	// workDir is using for overlay work
-	workURL := rootURL + "work/"
+	workURL := tmpDirRoot + "work/"
 	makeDir(workURL)
+	return workURL
 }
 
-func CreateMountPoint(rootURL string, mntURL string, mountType string) {
+//tmpDirRoot, lowerDir, upperDir, mntURL
+func CreateMountPoint(tempDirRoot string, lowerDir string, upperDir string, mntURL string) {
 	makeDir(mntURL)
-	CreateWorkDir4Overlay(rootURL)
+	workDir := CreateWorkDir4Overlay(tempDirRoot)
 	var dirs string
-	if "root" == mountType {
-		dirs = "lowerdir=" + rootURL + "busybox,upperdir=" + rootURL + "writeLayer,workdir=" + rootURL + "work";
-	} else {
-		dirs = "lowerdir=" + rootURL+ "writeLayer,upperdir=" + rootURL + "writeLayer,workdir=" + rootURL + "work";
-	}
+	dirs = "lowerdir=" + lowerDir + ",upperdir=" + upperDir + ",workdir=" + workDir;
 	logrus.Infof("overlay mount options: %s", dirs)
 	cmd := exec.Command("mount", "-t", "overlay", "overlay", mntURL,  "-o", dirs)
 	cmd.Stdout = os.Stdout
@@ -153,7 +164,7 @@ func CreateMountPoint(rootURL string, mntURL string, mountType string) {
 	}
 }
 
-func DeleteWorkSpace(rootURL string, mntURL string, volume string)  {
+func DeleteWorkSpace(tempDirRoot string, mntURL string, volume string)  {
 	if "" != volume {
 		volumeURLs := volumeUrlExtract(volume)
 		length := len(volumeURLs)
@@ -163,17 +174,20 @@ func DeleteWorkSpace(rootURL string, mntURL string, volume string)  {
 			"" != volumeURLs[1] {
 			containerVolumeURL := path.Join(mntURL, volumeURLs[1])
 			logrus.Infof("unmount volume %q", volumeURLs)
-			DeleteMountPoint(volumeURLs[0], containerVolumeURL)
+			tmpMountDir := tempDirRoot + "mounts/"
+			DeleteMountPoint(tmpMountDir, containerVolumeURL)
+			DeleteReadOnlyLayer(tmpMountDir)
 		} else {
 			logrus.Infof("Volume parameter input is not correct.")
 		}
 	}
 
-	DeleteMountPoint(rootURL, mntURL)
-	DeleteWriteLayer(rootURL)
+	DeleteMountPoint(tempDirRoot, mntURL)
+	DeleteWriteLayer(tempDirRoot)
+	DeleteContainerReadOnlyLayer(tempDirRoot)
 }
 
-func DeleteMountPoint(rootURL string, mntURL string) {
+func DeleteMountPoint(tempDirRoot string, mntURL string) {
 	cmd := exec.Command("umount", mntURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os .Stderr
@@ -187,21 +201,37 @@ func DeleteMountPoint(rootURL string, mntURL string) {
 		logrus.Errorf("Remove dir %s error: %v", mntURL, err)
 	}
 	logrus.Infof("Remove dir %s", mntURL)
-	DeleteWorkDir4Overlay(rootURL)
+	DeleteWorkDir4Overlay(tempDirRoot)
 }
 
-func DeleteWriteLayer(rootURL string) {
-	writeURL := rootURL + "writeLayer/"
+func DeleteReadOnlyLayer(tempDirRoot string) {
+	workURL := tempDirRoot + "readOnlyLayer/"
 
-	if err := os.RemoveAll(writeURL); nil != err {
-		logrus.Errorf("Remove dir %s error: %v", rootURL, err)
+	if err := os.RemoveAll(workURL); nil != err {
+		logrus.Errorf("Remove dir %s error: %v", tempDirRoot, err)
 	}
 }
 
-func DeleteWorkDir4Overlay(rootURL string) {
-	workURL := rootURL + "work/"
+func DeleteContainerReadOnlyLayer(tempDirRoot string) {
+	workURL := tempDirRoot + "containerReadOnlyRoot/"
 
 	if err := os.RemoveAll(workURL); nil != err {
-		logrus.Errorf("Remove dir %s error: %v", rootURL, err)
+		logrus.Errorf("Remove dir %s error: %v", tempDirRoot, err)
+	}
+}
+
+func DeleteWriteLayer(tempDirRoot string) {
+	writeURL := tempDirRoot + "writeLayer/"
+
+	if err := os.RemoveAll(writeURL); nil != err {
+		logrus.Errorf("Remove dir %s error: %v", tempDirRoot, err)
+	}
+}
+
+func DeleteWorkDir4Overlay(tempDirRoot string) {
+	workURL := tempDirRoot + "work/"
+
+	if err := os.RemoveAll(workURL); nil != err {
+		logrus.Errorf("Remove dir %s error: %v", tempDirRoot, err)
 	}
 }

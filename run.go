@@ -40,8 +40,8 @@ func setCgroupAndWaitParentProcess(res *subsystems.ResourceConfig, parent *exec.
 func removeWorkSpace(volume string)  {
 	// remove workspace
 	mntURL := "/root/mnt/"
-	rootURL := "/ramdisk/"
-	container.DeleteWorkSpace(rootURL, mntURL, volume)
+	tempDirRoot := "/ramdisk/mydocker/tmp/"
+	container.DeleteWorkSpace(tempDirRoot, mntURL, volume)
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
