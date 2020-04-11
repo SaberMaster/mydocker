@@ -8,10 +8,13 @@ func (s *CpusetSubSystem) Name() string {
 }
 
 func (s *CpusetSubSystem) Set(cgroupPath string, res *ResourceConfig) error {
-	//// init mems, or will occur "fail write /sys/fs/cgroup/cpuset/mydocker-cgroup/tasks: no space left on device" error
-	//if err := SetCgroupResourceConfig(s.Name(), "cpuset.mems", cgroupPath, "0"); nil != err {
-	//	return err
-	//}
+	//// init mems and cpus value, or will occur "fail write /sys/fs/cgroup/cpuset/mydocker-cgroup/tasks: no space left on device" error
+	if err := SetCgroupResourceConfig(s.Name(), "cpuset.mems", cgroupPath, "0"); nil != err {
+		return err
+	}
+	if "" == res.CpuSet {
+		res.CpuSet = "0"
+	}
 	return SetCgroupResourceConfig(s.Name(), "cpuset.cpus", cgroupPath, res.CpuSet)
 }
 
