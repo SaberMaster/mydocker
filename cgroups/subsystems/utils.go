@@ -46,6 +46,7 @@ func GetCgroupPath(subsystem string, cgroupPath string, autoCreate bool) (string
 			if err := os.Mkdir(cgroupFullPath, 0755); nil != err {
 				return "", fmt.Errorf("error create cgroup %v", err)
 			}
+			logrus.Infof("create dir: %s", cgroupFullPath)
 		}
 		return cgroupFullPath, nil
 	} else {
@@ -84,6 +85,7 @@ func ApplyCgroupResourceConfig(resourceName string, cgroupPath string, pid int) 
 
 func RemoveCgroupResourceConfig(resourceName string, cgroupPath string) error {
 	if subsysCgroupPath, err := GetCgroupPath(resourceName, cgroupPath, true); nil == err {
+		logrus.Infof("remove subsysCgroupPath:%s", subsysCgroupPath)
 		return os.RemoveAll(subsysCgroupPath)
 	} else {
 		return fmt.Errorf("get cgroup %s error: %v", cgroupPath, err)

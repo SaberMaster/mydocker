@@ -37,6 +37,8 @@ func (c *CgroupManager) Set(res *subsystems.ResourceConfig) error {
 }
 
 func (c *CgroupManager) Destory() error {
+	// sometimes we cannot del cgroup dir, use instead cgdelete cpu:mydocker-cgroup
+	// if we want to del cgroup dir, make sure that tasks file is empty
 	for _, subSysIns := range subsystems.SubsystemIns {
 		if err := subSysIns.Remove(c.Path); nil != err {
 			logrus.Warnf("remove cgroup fail :%v", err)
