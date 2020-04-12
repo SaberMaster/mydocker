@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"os"
 )
 
 type ContainerInfo struct {
@@ -48,4 +49,13 @@ func GetContainerInfo(containerName string) (*ContainerInfo, error)  {
 	}
 
 	return &containerInfo, nil
+}
+
+
+func RemoveContainerDefaultDir(containerName string) {
+	containerDefaultLocation := GetContainerDefaultFilePath(containerName)
+
+	if err := os.RemoveAll(containerDefaultLocation); nil != err {
+		logrus.Errorf("Remove dir %s error: %v", containerDefaultLocation, err)
+	}
 }
