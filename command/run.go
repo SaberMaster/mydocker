@@ -43,7 +43,7 @@ func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, v
 	//os.Exit(0)
 
 	if tty {
-		deleteContainerInfo(containerName)
+		container.RemoveContainerDefaultDir(containerName)
 	}
 }
 
@@ -121,10 +121,3 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 	return containerName, err
 }
 
-func deleteContainerInfo(containerName string) {
-	containerDefaultLocation := container.GetContainerDefaultFilePath(containerName)
-
-	if err := os.RemoveAll(containerDefaultLocation); nil != err {
-		logrus.Errorf("Remove dir %s error: %v", containerDefaultLocation, err)
-	}
-}
