@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/3i2bgod/mydocker/cgroups"
 	"github.com/3i2bgod/mydocker/cgroups/subsystems"
 	"github.com/3i2bgod/mydocker/container"
@@ -16,7 +15,12 @@ import (
 )
 
 func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume)
+	containerId := misc.RandomStringBytes(10)
+	if "" == containerName {
+		containerName = containerId
+	}
+
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
 
 	if nil == parent {
 		logrus.Error("new parent process error")
@@ -27,7 +31,7 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume str
 		logrus.Error(err)
 	}
 
-	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName)
+	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName, containerId)
 
 	if nil != err {
 		logrus.Errorf("Record container info error: %v", err)
@@ -72,18 +76,13 @@ func sendInitCommand(cmdArray []string, writePipe *os.File) {
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerName string) (string, error) {
-	id := misc.RandomStringBytes(10)
+func recordContainerInfo(containerPID int, commandArray []string, containerName string, containerId string) (string, error) {
 	createTime := time.Now().Format("2006-01-02 15:04:05")
 	command := strings.Join(commandArray, "")
 
-	if "" == containerName {
-		containerName = id
-	}
-
 	containerInfo := &container.ContainerInfo{
 		Pid:         strconv.Itoa(containerPID),
-		Id:          id,
+		Id:          containerId,
 		Name:        containerName,
 		Command:     command,
 		CreatedTime: createTime,
@@ -99,13 +98,13 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 
 	jsonStr := string(jsonBytes)
 
-	containerDefaultLocation := fmt.Sprintf(container.DEFAULT_INFO_LOCATION, containerName)
+	containerDefaultLocation := container.GetContainerDefaultFilePath(containerName)
 
 	if err := os.MkdirAll(containerDefaultLocation, 0622); nil != err {
 		logrus.Errorf("Mkdir dir: %s error: %v", containerDefaultLocation, err)
 		return "", err
 	}
-	infoFileName := containerDefaultLocation + container.CONFIG_NAME
+	infoFileName := containerDefaultLocation + container.CONFIG_FILE_NAME
 
 	file, err := os.Create(infoFileName)
 
@@ -123,7 +122,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 }
 
 func deleteContainerInfo(containerName string) {
-	containerDefaultLocation := fmt.Sprintf(container.DEFAULT_INFO_LOCATION, containerName)
+	containerDefaultLocation := container.GetContainerDefaultFilePath(containerName)
 
 	if err := os.RemoveAll(containerDefaultLocation); nil != err {
 		logrus.Errorf("Remove dir %s error: %v", containerDefaultLocation, err)
