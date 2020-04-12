@@ -37,6 +37,11 @@ var runCommand = cli.Command{
 			Name:        "v",
 			Usage:       "volume",
 		},
+
+		cli.StringFlag{
+			Name:        "name",
+			Usage:       "container name",
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		if len(ctx.Args()) < 1 {
@@ -61,9 +66,9 @@ var runCommand = cli.Command{
 			CpuSet:      ctx.String("cpuset"),
 		}
 
-
+		containerName := ctx.String("name")
 		log.Infof("create tty %v", tty)
-		Run(tty, cmdArray, resConf, "")
+		Run(tty, cmdArray, resConf, "", containerName)
 		return nil
 	},
 }
@@ -87,6 +92,15 @@ var commitCommand = cli.Command{
 		}
 		imageUrl := ctx.Args().Get(0)
 		commitContainer(imageUrl)
+		return nil
+	},
+}
+
+var listCommand = cli.Command{
+	Name:   "ps",
+	Usage:  "list all containers info",
+	Action: func(ctx *cli.Context) error{
+		ListContainers()
 		return nil
 	},
 }
