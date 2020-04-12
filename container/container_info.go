@@ -1,5 +1,7 @@
 package container
 
+import "fmt"
+
 type ContainerInfo struct {
 	Pid         string `json:"pid"`
 	Id          string `json:"id"`
@@ -14,5 +16,10 @@ var (
 	STOP                  = "stppped"
 	EXIT                  = "exited"
 	DEFAULT_INFO_LOCATION = "/var/run/mydocker/%s/"
-	CONFIG_NAME           = "config.json"
+	CONFIG_FILE_NAME      = "config.json"
+	LOG_FILE_NAME         = "container.log"
 )
+
+func GetContainerDefaultFilePath(containerName string) string {
+	return fmt.Sprintf(DEFAULT_INFO_LOCATION, containerName)
+}

@@ -11,7 +11,7 @@ import (
 )
 
 func ListContainers()  {
-	containersDefaultLocation := fmt.Sprintf(container.DEFAULT_INFO_LOCATION, "")
+	containersDefaultLocation := container.GetContainerDefaultFilePath("")
 
 	files, err := ioutil.ReadDir(containersDefaultLocation)
 
@@ -54,9 +54,9 @@ func getContainerInfo(file os.FileInfo) (*container.ContainerInfo, error) {
 
 	containerName := file.Name()
 
-	configFileDir := fmt.Sprintf(container.DEFAULT_INFO_LOCATION, containerName)
+	configFileDir := container.GetContainerDefaultFilePath(containerName)
 
-	configFilePath := configFileDir + container.CONFIG_NAME
+	configFilePath := configFileDir + container.CONFIG_FILE_NAME
 
 	content, err := ioutil.ReadFile(configFilePath)
 

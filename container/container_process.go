@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string, containerName string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := os.Pipe()
 	if nil != err {
 		logrus.Errorf("new pipe error %v", err)
@@ -25,6 +25,22 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		containerDefaultLocation := GetContainerDefaultFilePath(containerName)
+		if err := os.MkdirAll(containerDefaultLocation, 0622); nil != err {
+			logrus.Errorf("Mkdir dir: %s error: %v", containerDefaultLocation, err)
+			return nil, nil
+		}
+
+		stdLogFilePath := containerDefaultLocation + LOG_FILE_NAME
+
+		stdLogFile, err := os.Create(stdLogFilePath)
+		if nil != err {
+			logrus.Errorf("Create file %s error: %v", stdLogFile, err)
+			return nil, nil
+		}
+
+		cmd.Stdout = stdLogFile
 	}
 
 	// as we need to detach child process, so the unmount and clean dir
