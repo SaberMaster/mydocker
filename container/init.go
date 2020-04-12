@@ -39,6 +39,8 @@ func RunContainerInitProcess() error {
 func readUserCommand() []string {
 	// 3 is read pipe (the fourth pipe is the the cmd extraFiles)
 	pipe := os.NewFile(uintptr(3), "pipe")
+	// close pipe after receive cmd
+	defer pipe.Close()
 	msg, err := ioutil.ReadAll(pipe)
 	if nil != err {
 		logrus.Errorf("init read pipe error %v", err)

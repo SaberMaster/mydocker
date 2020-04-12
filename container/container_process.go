@@ -27,16 +27,21 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stderr = os.Stderr
 	}
 
-	mntURL := "/root/mnt/"
-	// as I test the project in docker
-	// the fileSystem is overlay
-	// but overlay fs can't be overlay upperDir and workDir
-	// so i mount ram to a folder
-	// mount -t tmpfs tmpfs /ramdisk/
-	tmpDirRoot := "/ramdisk/mydocker/tmp/"
-	imageTarUrl := "/ramdisk/busybox.tar"
-	NewWorkSpace(tmpDirRoot, mntURL, imageTarUrl, volume)
+	// as we need to detach child process, so the unmount and clean dir
+	// is not impl after parent process exit
+	//mntURL := "/root/mnt/"
+	//// as I test the project in docker
+	//// the fileSystem is overlay
+	//// but overlay fs can't be overlay upperDir and workDir
+	//// so i mount ram to a folder
+	//// mount -t tmpfs tmpfs /ramdisk/
+	//tmpDirRoot := "/ramdisk/mydocker/tmp/"
+	//imageTarUrl := "/ramdisk/busybox.tar"
+	//NewWorkSpace(tmpDirRoot, mntURL, imageTarUrl, volume)
 	//change current dir to mntURL
+
+	// if need to unzip busybox.tar to `mntURL` folder
+	mntURL := "/root/busybox"
 	cmd.Dir = mntURL
 	// attach the readPipe to the cmd
 	cmd.ExtraFiles = []*os.File{readPipe}

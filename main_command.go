@@ -16,6 +16,10 @@ var runCommand = cli.Command{
 			Name:        "ti",
 			Usage:       "enable tty",
 		},
+		cli.BoolFlag{
+			Name:        "d",
+			Usage:       "detach container",
+		},
 		cli.StringFlag{
 			Name:        "m",
 			Usage:       "memory limit",
@@ -45,6 +49,11 @@ var runCommand = cli.Command{
 		}
 
 		tty := ctx.Bool("ti")
+		detach := ctx.Bool("d")
+
+		if tty && detach {
+			return fmt.Errorf("ti and p parameter can not both provided")
+		}
 
 		resConf := &subsystems.ResourceConfig{
 			MemoryLimit: ctx.String("m"),
@@ -52,9 +61,9 @@ var runCommand = cli.Command{
 			CpuSet:      ctx.String("cpuset"),
 		}
 
-		volume := ctx.String("v")
 
-		Run(tty, cmdArray, resConf, volume)
+		log.Infof("create tty %v", tty)
+		Run(tty, cmdArray, resConf, "")
 		return nil
 	},
 }
