@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"github.com/3i2bgod/mydocker/container"
