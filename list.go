@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/3i2bgod/mydocker/container"
 	"github.com/Sirupsen/logrus"
@@ -23,7 +22,7 @@ func ListContainers()  {
 	var containerInfos []*container.ContainerInfo
 
 	for _, file := range files {
-		containerInfo, err := getContainerInfo(file)
+		containerInfo, err := container.GetContainerInfo(file.Name())
 		if nil != err {
 			logrus.Errorf("Get container info err: %v", err)
 			continue
@@ -49,29 +48,3 @@ func ListContainers()  {
 		return
 	}
 }
-
-func getContainerInfo(file os.FileInfo) (*container.ContainerInfo, error) {
-
-	containerName := file.Name()
-
-	configFileDir := container.GetContainerDefaultFilePath(containerName)
-
-	configFilePath := configFileDir + container.CONFIG_FILE_NAME
-
-	content, err := ioutil.ReadFile(configFilePath)
-
-	if nil != err {
-		logrus.Errorf("Read file: %s err: %v", configFilePath, err)
-		return nil, err
-	}
-
-	var containerInfo container.ContainerInfo
-
-	if err := json.Unmarshal(content, &containerInfo); nil != err {
-		logrus.Errorf("Json unmarshal error: %v", err)
-		return nil, err
-	}
-
-	return &containerInfo, nil
-}
-

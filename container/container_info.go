@@ -1,6 +1,11 @@
 package container
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/Sirupsen/logrus"
+	"io/ioutil"
+)
 
 type ContainerInfo struct {
 	Pid         string `json:"pid"`
@@ -22,4 +27,25 @@ var (
 
 func GetContainerDefaultFilePath(containerName string) string {
 	return fmt.Sprintf(DEFAULT_INFO_LOCATION, containerName)
+}
+
+func GetContainerInfo(containerName string) (*ContainerInfo, error)  {
+	containersDefaultPath := GetContainerDefaultFilePath(containerName)
+	configFilePath := containersDefaultPath + CONFIG_FILE_NAME
+
+	content, err := ioutil.ReadFile(configFilePath)
+
+	if nil != err {
+		logrus.Errorf("Read file: %s err: %v", configFilePath, err)
+		return nil, err
+	}
+
+	var containerInfo ContainerInfo
+
+	if err := json.Unmarshal(content, &containerInfo); nil != err {
+		logrus.Errorf("Json unmarshal error: %v", err)
+		return nil, err
+	}
+
+	return &containerInfo, nil
 }
