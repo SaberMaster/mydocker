@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
+func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
 	containerId := misc.RandomStringBytes(10)
 	if "" == containerName {
 		containerName = containerId

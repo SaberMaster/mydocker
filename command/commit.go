@@ -1,11 +1,11 @@
-package main
+package command
 
 import (
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
 )
 
-func commitContainer(imageUrl string)  {
+func CommitContainer(imageUrl string)  {
 	mntURL := "/root/mnt/"
 
 	if _, err := exec.Command("tar", "-czf", imageUrl, "-C", mntURL, ".").CombinedOutput(); nil != err {

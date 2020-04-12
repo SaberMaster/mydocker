@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func stopContainer(containerName string)  {
+func StopContainer(containerName string)  {
 	containerInfo, err := container.GetContainerInfo(containerName)
 	if nil != err {
 		logrus.Errorf("Get container: %s err: %v", containerName, err)

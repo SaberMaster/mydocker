@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func logContainer(containerName string) {
+func LogContainer(containerName string) {
 	configFileDir := container.GetContainerDefaultFilePath(containerName)
 
 	logFilePath := configFileDir + container.LOG_FILE_NAME

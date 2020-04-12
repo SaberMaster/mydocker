@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/3i2bgod/mydocker/cgroups/subsystems"
+	"github.com/3i2bgod/mydocker/command"
 	"github.com/3i2bgod/mydocker/container"
 	log "github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -69,7 +70,7 @@ var runCommand = cli.Command{
 
 		containerName := ctx.String("name")
 		log.Infof("create tty %v", tty)
-		Run(tty, cmdArray, resConf, "", containerName)
+		command.RunContainer(tty, cmdArray, resConf, "", containerName)
 		return nil
 	},
 }
@@ -92,7 +93,7 @@ var commitCommand = cli.Command{
 			return fmt.Errorf("Missing container name")
 		}
 		imageUrl := ctx.Args().Get(0)
-		commitContainer(imageUrl)
+		command.CommitContainer(imageUrl)
 		return nil
 	},
 }
@@ -101,7 +102,7 @@ var listCommand = cli.Command{
 	Name:   "ps",
 	Usage:  "list all containers info",
 	Action: func(ctx *cli.Context) error{
-		ListContainers()
+		command.ListContainers()
 		return nil
 	},
 }
@@ -115,7 +116,7 @@ var logCommand = cli.Command{
 		}
 
 		containerName := ctx.Args().Get(0)
-		logContainer(containerName)
+		command.LogContainer(containerName)
 		return nil
 	},
 }
@@ -125,7 +126,7 @@ var execCommand = cli.Command{
 	Usage:  "exec a command into container",
 	Action: func(ctx *cli.Context) error{
 
-		if "" != os.Getenv(ENV_EXEC_PID) {
+		if "" != os.Getenv(command.ENV_EXEC_PID) {
 			log.Infof("pid callback pid %s", os.Getpid())
 			return nil
 		}
@@ -141,7 +142,7 @@ var execCommand = cli.Command{
 			cmdArray = append(cmdArray, arg)
 		}
 
-		ExecContainer(containerName, cmdArray)
+		command.ExecContainer(containerName, cmdArray)
 		return nil
 	},
 }
@@ -155,7 +156,7 @@ var stopCommand = cli.Command{
 		}
 
 		containerName := ctx.Args().Get(0)
-		stopContainer(containerName)
+		command.StopContainer(containerName)
 		return nil
 	},
 }
