@@ -14,13 +14,14 @@ import (
 	"time"
 )
 
-func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
+func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string,
+	containerName string, envSlice []string) {
 	containerId := misc.RandomStringBytes(10)
 	if "" == containerName {
 		containerName = containerId
 	}
 
-	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName, envSlice)
 
 	if nil == parent {
 		logrus.Error("new parent process error")

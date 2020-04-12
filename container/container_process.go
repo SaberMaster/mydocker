@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func NewParentProcess(tty bool, volume string, containerName string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string, containerName string, envSlice []string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := os.Pipe()
 	if nil != err {
 		logrus.Errorf("new pipe error %v", err)
@@ -21,6 +21,7 @@ func NewParentProcess(tty bool, volume string, containerName string) (*exec.Cmd,
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
 	}
 
+	cmd.Env = append(os.Environ(), envSlice...)
 	if tty {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
