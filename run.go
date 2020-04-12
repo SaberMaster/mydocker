@@ -22,19 +22,21 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume str
 		logrus.Error(err)
 	}
 
-	setCgroupAndWaitParentProcess(res, parent, cmdArray, writePipe)
-	removeWorkSpace(volume)
-	os.Exit(0)
+	setCgroupAndWaitParentProcess(tty, res, parent, cmdArray, writePipe)
+	//removeWorkSpace(volume)
+	//os.Exit(0)
 }
 
-func setCgroupAndWaitParentProcess(res *subsystems.ResourceConfig, parent *exec.Cmd, cmdArray []string, writePipe *os.File) {
+func setCgroupAndWaitParentProcess(tty bool, res *subsystems.ResourceConfig, parent *exec.Cmd, cmdArray []string, writePipe *os.File) {
 	// use docker-cgroup as cgroup name
 	cgroupManager := cgroups.NewCgroupManager("mydocker-cgroup")
 	defer cgroupManager.Destory()
 	cgroupManager.Set(res)
 	cgroupManager.Apply(parent.Process.Pid)
 	sendInitCommand(cmdArray, writePipe)
-	parent.Wait()
+	if tty {
+		parent.Wait()
+	}
 }
 
 func removeWorkSpace(volume string)  {
