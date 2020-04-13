@@ -15,6 +15,7 @@ type ContainerInfo struct {
 	Command     string `json:"command"`
 	CreatedTime string `json:"created_time"`
 	Status      string `json:"status"`
+	Volume		string `json:"volume"`
 }
 
 var (
@@ -24,6 +25,15 @@ var (
 	DEFAULT_INFO_LOCATION = "/var/run/mydocker/%s/"
 	CONFIG_FILE_NAME      = "config.json"
 	LOG_FILE_NAME         = "container.log"
+
+	ROOT_URL = "/root"
+	MNT_URL  = "/root/mnt/%s"
+	//// as I test the project in docker
+	//// the fileSystem is overlay
+	//// but overlay fs can't be overlay upperDir and workDir
+	//// so i mount ram to a folder
+	//// mount -t tmpfs tmpfs /ramdisk/
+	OVERLAY_TMP_URL		  = "/ramdisk/overlay/docker/%s/%s"
 )
 
 func GetContainerDefaultFilePath(containerName string) string {

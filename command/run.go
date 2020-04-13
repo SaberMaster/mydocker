@@ -15,13 +15,13 @@ import (
 )
 
 func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume string,
-	containerName string, envSlice []string) {
+	containerName string, envSlice []string, imageName string) {
 	containerId := misc.RandomStringBytes(10)
 	if "" == containerName {
 		containerName = containerId
 	}
 
-	parent, writePipe := container.NewParentProcess(tty, volume, containerName, envSlice)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName, envSlice, imageName)
 
 	if nil == parent {
 		logrus.Error("new parent process error")
@@ -32,7 +32,7 @@ func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, v
 		logrus.Error(err)
 	}
 
-	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName, containerId)
+	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName, containerId, volume)
 
 	if nil != err {
 		logrus.Errorf("Record container info error: %v", err)
@@ -45,6 +45,7 @@ func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, v
 
 	if tty {
 		container.RemoveContainerDefaultDir(containerName)
+		container.RemoveWorkSpace(containerName, volume)
 	}
 }
 
@@ -63,12 +64,6 @@ func setCgroupAndWaitParentProcess(tty bool, res *subsystems.ResourceConfig, par
 	}
 }
 
-func removeWorkSpace(volume string)  {
-	// remove workspace
-	mntURL := "/root/mnt/"
-	tempDirRoot := "/ramdisk/mydocker/tmp/"
-	container.DeleteWorkSpace(tempDirRoot, mntURL, volume)
-}
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
 	command := strings.Join(cmdArray, " ")
@@ -77,7 +72,7 @@ func sendInitCommand(cmdArray []string, writePipe *os.File) {
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerName string, containerId string) (string, error) {
+func recordContainerInfo(containerPID int, commandArray []string, containerName string, containerId string, volume string) (string, error) {
 	createTime := time.Now().Format("2006-01-02 15:04:05")
 	command := strings.Join(commandArray, "")
 
@@ -88,6 +83,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 		Command:     command,
 		CreatedTime: createTime,
 		Status:      container.RUNNING,
+		Volume:		 volume,
 	}
 
 	jsonBytes, err := json.Marshal(containerInfo)
