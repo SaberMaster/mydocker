@@ -12,7 +12,7 @@ import (
 
 var runCommand = cli.Command{
 	Name: "run",
-	Usage: "create a container",
+	Usage: "create a container ie: mydocker run -ti [image] [command]",
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:        "ti",
@@ -60,6 +60,10 @@ var runCommand = cli.Command{
 			cmdArray = append(cmdArray, arg)
 		}
 
+		//get image name
+		imageName := cmdArray[0]
+		cmdArray = cmdArray[1:]
+
 		tty := ctx.Bool("ti")
 		detach := ctx.Bool("d")
 
@@ -78,7 +82,9 @@ var runCommand = cli.Command{
 
 		envSlice := ctx.StringSlice("e")
 
-		command.RunContainer(tty, cmdArray, resConf, "", containerName, envSlice)
+		volume := ctx.String("v")
+
+		command.RunContainer(tty, cmdArray, resConf, volume, containerName, envSlice, imageName)
 		return nil
 	},
 }
@@ -100,8 +106,9 @@ var commitCommand = cli.Command{
 		if len(ctx.Args()) < 1 {
 			return fmt.Errorf("Missing container name")
 		}
-		imageUrl := ctx.Args().Get(0)
-		command.CommitContainer(imageUrl)
+		containerName := ctx.Args().Get(0)
+		imageUrl := ctx.Args().Get(1)
+		command.CommitContainer(containerName, imageUrl)
 		return nil
 	},
 }
