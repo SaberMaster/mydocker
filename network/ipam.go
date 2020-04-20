@@ -103,9 +103,10 @@ func (ipam *IPAM) Allocate(subnet *net.IPNet) (ip net.IP, err error) {
 	return
 }
 
-func getNewIp(subnet *net.IPNet, offset int) (ip net.IP) {
+func getNewIp(subnet *net.IPNet, offset int) net.IP {
 	// ip is a uint array, [1,2,3,4]
-	ip = subnet.IP.To4()
+	ip := subnet.IP.To4()
+	ip = net.IPv4(ip[0], ip[1], ip[2], ip[3]).To4()
 	for t := uint(4); t > 0; t-- {
 		[]byte(ip)[4 - t] += uint8(offset >> ((t - 1) * 8))
 	}

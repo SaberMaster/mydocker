@@ -197,7 +197,7 @@ func DeleteWorkSpace(containerName string, volume string)  {
 func DeleteMountPoint(tempDirRoot string, mntURL string) {
 	cmd := exec.Command("umount", mntURL)
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os .Stderr
+	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); nil != err {
 		logrus.Errorf("umount error: %v", err)
