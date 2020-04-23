@@ -3,12 +3,16 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/3i2bgod/mydocker/container"
 	"github.com/Sirupsen/logrus"
+	"github.com/vishvananda/netns"
 	"net"
 	"github.com/vishvananda/netlink"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/tabwriter"
 )
@@ -193,4 +197,150 @@ func DeleteNetwork(networkName string) error {
 	}
 	return network.remove(defaultNetworkPath)
 }
+
+func Connect(networkName string, cinfo *container.ContainerInfo) error {
+	network, ok := networks[networkName]
+
+	if !ok {
+		return fmt.Errorf("No such network %s", networkName)
+	}
+
+	ip, err := ipAllocator.Allocate(network.IpRange)
+	if nil != err {
+		return err
+	}
+
+	endpoint := &Endpoint{
+		ID:          fmt.Sprintf("%s-%s", cinfo.Id, networkName),
+		IPAddress:   ip,
+		Network:  network,
+		PortMapping: cinfo.PortMapping,
+	}
+
+	if err := drivers[network.Driver].Connect(network, endpoint); nil != err {
+		return err
+	}
+
+	// config dev ip and route in the netns
+	if err = configEndpointIpAddressAndRoute(endpoint, cinfo); nil != err {
+		return err
+	}
+
+	return configPortMapping(endpoint, cinfo)
+}
+
+func configPortMapping(endpoint *Endpoint, cInfo *container.ContainerInfo) error {
+	for _, pm := range endpoint.PortMapping {
+		portMapping := strings.Split(pm, ":")
+
+		if 2 != len(portMapping) {
+			logrus.Errorf("port mapping format error. %v", pm)
+			continue
+		}
+
+		// iptables -t nat -A PREROUTING -p tcp -m tcp --dport host_port -j DNAT --to-destination container_ip:container_port
+		iptablesCmd := fmt.Sprintf("-t nat -A PREROUTING -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
+			portMapping[0], endpoint.IPAddress.String(), portMapping[1])
+		logrus.Infof("iptables cmd:%s", iptablesCmd)
+
+		cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
+		output, err := cmd.Output()
+		if nil != err {
+			logrus.Errorf("iptables Output, %v", output)
+			continue
+		}
+	}
+	return nil
+}
+
+func configEndpointIpAddressAndRoute(endpoint *Endpoint, cInfo *container.ContainerInfo) error {
+	peerLink, err := netlink.LinkByName(endpoint.Device.PeerName)
+
+	if nil != err {
+		return fmt.Errorf("fail config endpoint: %v", err)
+	}
+
+	// add peer virtual endpoint to container namespace
+	defer enterContainerNetns(&peerLink, cInfo)()
+
+	interfaceIP := *endpoint.Network.IpRange
+	interfaceIP.IP = endpoint.IPAddress.To4()
+
+	// set veth ip in the container
+	if err = setInterfaceIP(endpoint.Device.PeerName, interfaceIP.String()); nil != err {
+		return fmt.Errorf("set up interface:%v ip error: %s", endpoint.Network, err)
+	}
+
+	// start veth in the container
+	if err = setInterfaceUp(endpoint.Device.PeerName); nil != err {
+		return err
+	}
+
+	// enable `lo` 127.0.0.1 interface
+	if err = setInterfaceUp("lo"); nil != err {
+		return err
+	}
+
+	// route add -net 0.0.0.0/0 gw {bridge} dev {veth}
+	_, cidr, _ := net.ParseCIDR("0.0.0.0/0")
+	defaultRoute := &netlink.Route{
+		LinkIndex: peerLink.Attrs().Index,
+		Gw:        endpoint.Network.IpRange.IP,
+		Dst:       cidr,
+	}
+
+	if err = netlink.RouteAdd(defaultRoute); nil != err {
+		return err
+	}
+	return nil
+}
+
+func enterContainerNetns(link *netlink.Link, cInfo *container.ContainerInfo) func() {
+
+	file, err := os.OpenFile(fmt.Sprintf("/proc/%s/ns/net", cInfo.Pid), os.O_RDONLY, 0)
+	if nil != err {
+		logrus.Errorf("get container net namespace error:%v.", err)
+	}
+
+	nsFD := file.Fd()
+
+	//lock current thread
+	//otherwise, goroutine will be dispatch to another thread
+
+	runtime.LockOSThread()
+
+	// move link to container's network namespace
+	// ip link set $link netns $ns
+	if err = netlink.LinkSetNsFd(*link, int(nsFD)); nil != err {
+		logrus.Errorf("set link netns error: %v", err)
+	}
+
+	// get net namespace of current network
+	origins, err := netns.Get()
+
+	if nil != err {
+		logrus.Errorf("get current netns error: %v", err)
+	}
+
+	if err = netns.Set(netns.NsHandle(nsFD)); nil != err {
+		logrus.Errorf("set netns error: %v", err)
+	}
+
+	return func() {
+		// reset to origin net namespace
+		netns.Set(origins)
+		// close origin namespace file
+		origins.Close()
+		runtime.UnlockOSThread()
+		// close namespace file
+		file.Close()
+	}
+}
+
+func Disconnect(networkName string, cinfo *container.ContainerInfo) error {
+	panic("not implement")
+}
+
+
+
 

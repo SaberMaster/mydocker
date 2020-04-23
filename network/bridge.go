@@ -14,7 +14,34 @@ type BridgeNetworkDriver struct {
 }
 
 func (driver *BridgeNetworkDriver) Connect(network *Network, endpoint *Endpoint) error {
-	panic("implement me")
+	bridgeName := network.Name
+
+	bridge, err := netlink.LinkByName(bridgeName)
+
+	if nil != err {
+		return err
+	}
+
+	linkAttrs := netlink.NewLinkAttrs()
+	linkAttrs.Name = endpoint.ID[:5]
+	// bind another peer to the bridge
+	linkAttrs.MasterIndex = bridge.Attrs().Index
+
+	// peerName is "cif-{endpoint.Id[0:5]}"
+	endpoint.Device = netlink.Veth{
+		LinkAttrs: linkAttrs,
+		PeerName:  "cif-" + endpoint.ID[:5],
+	}
+
+	if err = netlink.LinkAdd(&endpoint.Device); nil != err {
+		return fmt.Errorf("Error Add Endpoint Device: %v", err)
+	}
+
+	// ip link set xxx up
+	if err = netlink.LinkSetUp(&endpoint.Device); nil != err {
+		return fmt.Errorf("Error set Endpoint Device up: %v", err)
+	}
+	return nil
 }
 
 func (driver *BridgeNetworkDriver) Disconnect(network *Network, endpoint *Endpoint) error {
@@ -49,7 +76,7 @@ func (driver *BridgeNetworkDriver) initBridge(network *Network) error {
 	}
 
 	// set iptables snat rule
-	// iptables -t nat -A PREROUTING -s <bridgeName> ! -o <bridgeName> -j MASQUERADE
+	// iptables -t nat -A POSTROUTING -s <bridgeName> ! -o <bridgeName> -j MASQUERADE
 	if err := setupIPTables(bridgeName, network.IpRange); nil != err {
 		return fmt.Errorf("Error setting iptables for: %s, Error: %v", bridgeName, err)
 	}
