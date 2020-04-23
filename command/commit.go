@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func CommitContainer(containerName string, imageUrl string)  {
+func CommitContainer(containerName string, imageUrl string) {
 	mntURL := fmt.Sprintf(container.MNT_URL, containerName)
 
 	if _, err := exec.Command("tar", "-czf", imageUrl, "-C", mntURL, ".").CombinedOutput(); nil != err {

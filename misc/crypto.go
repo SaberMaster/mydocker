@@ -15,4 +15,3 @@ func RandomStringBytes(length int) string {
 	}
 	return string(b)
 }
-

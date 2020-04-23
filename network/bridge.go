@@ -84,7 +84,6 @@ func (driver *BridgeNetworkDriver) initBridge(network *Network) error {
 	return nil
 }
 
-
 func (driver *BridgeNetworkDriver) Create(subnet string, name string) (*Network, error) {
 	ip, ipRange, _ := net.ParseCIDR(subnet)
 	ipRange.IP = ip
@@ -92,7 +91,7 @@ func (driver *BridgeNetworkDriver) Create(subnet string, name string) (*Network,
 	network := &Network{
 		Name:    name,
 		IpRange: ipRange,
-		Driver: driver.Name(),
+		Driver:  driver.Name(),
 	}
 
 	err := driver.initBridge(network)
@@ -150,11 +149,11 @@ func setInterfaceIP(name string, rawIP string) error {
 	}
 
 	addr := &netlink.Addr{
-		IPNet:       ipNet,
-		Label:       "",
-		Flags:       0,
-		Scope:       0,
-		Peer:        nil,
+		IPNet: ipNet,
+		Label: "",
+		Flags: 0,
+		Scope: 0,
+		Peer:  nil,
 	}
 	//ip addr add $addr dev $link
 	// and will add route 192.168.0.0/24 to this interface
@@ -172,7 +171,7 @@ func createBridgeInterface(bridgeName string) error {
 	linkAttrs.Name = bridgeName
 
 	br := &netlink.Bridge{
-		LinkAttrs:         linkAttrs,
+		LinkAttrs: linkAttrs,
 	}
 	if err := netlink.LinkAdd(br); nil != err {
 		return fmt.Errorf("Bridge creation failed for bridge: %s, %v", bridgeName, err)

@@ -24,7 +24,7 @@ func FindCgroupMountpoint(subsystem string) string {
 	for scanner.Scan() {
 		txt := scanner.Text()
 		fields := strings.Split(txt, " ")
-		for _, opt := range strings.Split(fields[len(fields) - 1], ",") {
+		for _, opt := range strings.Split(fields[len(fields)-1], ",") {
 			if opt == subsystem {
 				return fields[4]
 			}
@@ -37,11 +37,11 @@ func FindCgroupMountpoint(subsystem string) string {
 	return ""
 }
 
-func GetCgroupPath(subsystem string, cgroupPath string, autoCreate bool) (string, error)  {
+func GetCgroupPath(subsystem string, cgroupPath string, autoCreate bool) (string, error) {
 	cgroupRoot := FindCgroupMountpoint(subsystem)
 	cgroupFullPath := path.Join(cgroupRoot, cgroupPath)
 	logrus.Infof("cgroup full path: %v", cgroupFullPath)
-	if _, err := os.Stat(cgroupFullPath); nil == err || (autoCreate && os.IsNotExist(err)){
+	if _, err := os.Stat(cgroupFullPath); nil == err || (autoCreate && os.IsNotExist(err)) {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(cgroupFullPath, 0755); nil != err {
 				return "", fmt.Errorf("error create cgroup %v", err)
@@ -53,7 +53,6 @@ func GetCgroupPath(subsystem string, cgroupPath string, autoCreate bool) (string
 		return "", fmt.Errorf("cgroup path error %v", err)
 	}
 }
-
 
 func writeCgroupResourceConfig2File(resourceName string, cgroupPath string, resourceValue string, resourceCgroupFileName string) error {
 	if "" == resourceValue {

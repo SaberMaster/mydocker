@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/3i2bgod/mydocker/container"
 	"github.com/Sirupsen/logrus"
+	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"net"
-	"github.com/vishvananda/netlink"
 	"os"
 	"os/exec"
 	"path"
@@ -16,19 +16,20 @@ import (
 	"strings"
 	"text/tabwriter"
 )
+
 type Network struct {
-	Name string
+	Name    string
 	IpRange *net.IPNet
-	Driver string
+	Driver  string
 }
 
 type Endpoint struct {
-	ID string `json:"id"`
-	Device netlink.Veth `json:"device"`
-	IPAddress net.IP `json:"ip_address"`
-	MacAddress net.HardwareAddr `json:"mac_address"`
-	PortMapping []string `json:"port_mapping"`
-	Network *Network
+	ID          string           `json:"id"`
+	Device      netlink.Veth     `json:"device"`
+	IPAddress   net.IP           `json:"ip_address"`
+	MacAddress  net.HardwareAddr `json:"mac_address"`
+	PortMapping []string         `json:"port_mapping"`
+	Network     *Network
 }
 
 type NetworkDriver interface {
@@ -110,8 +111,8 @@ func (nw *Network) load(dumpPath string) error {
 
 var (
 	defaultNetworkPath = "/var/run/mydocker/network/network/"
-	drivers = map[string]NetworkDriver{}
-	networks = map[string]*Network{}
+	drivers            = map[string]NetworkDriver{}
+	networks           = map[string]*Network{}
 )
 
 func Init() error {
@@ -125,7 +126,7 @@ func Init() error {
 			return err
 		}
 	}
-	
+
 	filepath.Walk(defaultNetworkPath, func(nwPath string, info os.FileInfo, err error) error {
 		if strings.HasSuffix(nwPath, "/") {
 			return nil
@@ -164,7 +165,7 @@ func CreateNetwork(driver, subnet, name string) error {
 	return network.dump(defaultNetworkPath)
 }
 
-func ListNetwork()  {
+func ListNetwork() {
 	writer := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
 	fmt.Fprint(writer, "Name\tIpRange\tDriver\n")
 
@@ -213,7 +214,7 @@ func Connect(networkName string, cinfo *container.ContainerInfo) error {
 	endpoint := &Endpoint{
 		ID:          fmt.Sprintf("%s-%s", cinfo.Id, networkName),
 		IPAddress:   ip,
-		Network:  network,
+		Network:     network,
 		PortMapping: cinfo.PortMapping,
 	}
 
@@ -340,7 +341,3 @@ func enterContainerNetns(link *netlink.Link, cInfo *container.ContainerInfo) fun
 func Disconnect(networkName string, cinfo *container.ContainerInfo) error {
 	panic("not implement")
 }
-
-
-
-

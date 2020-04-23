@@ -51,5 +51,3 @@ func NewParentProcess(tty bool, volume string, containerName string, envSlice []
 	// return writePipe to send user cmd
 	return cmd, writePipe
 }
-
-

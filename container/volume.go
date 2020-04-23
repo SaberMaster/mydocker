@@ -32,7 +32,7 @@ func NewWorkSpace(imageName string, containerName string, volume string) {
 		return
 	}
 
-	writeLayer := CreateWriteLayer(fmt.Sprintf(OVERLAY_TMP_URL,  containerName, "container"))
+	writeLayer := CreateWriteLayer(fmt.Sprintf(OVERLAY_TMP_URL, containerName, "container"))
 
 	mntURL := fmt.Sprintf(MNT_URL, containerName)
 	makeDir(mntURL)
@@ -41,7 +41,7 @@ func NewWorkSpace(imageName string, containerName string, volume string) {
 	MountVolumeIfNeed(containerName, volume)
 }
 
-func RemoveWorkSpace(containerName string, volume string)  {
+func RemoveWorkSpace(containerName string, volume string) {
 	// remove workspace
 	DeleteWorkSpace(containerName, volume)
 }
@@ -71,7 +71,6 @@ func MountVolume(tmpDirRoot string, containerName string, volumeURLs []string) {
 	logrus.Infof("make parent dir %s", parentURL)
 	makeDir(parentURL)
 
-
 	logrus.Infof("make container dir %s", parentURL)
 	containerURL := volumeURLs[1]
 	containerMountUrlPrefix := fmt.Sprintf(MNT_URL, containerName)
@@ -80,7 +79,7 @@ func MountVolume(tmpDirRoot string, containerName string, volumeURLs []string) {
 
 	readonlyLayer := CreateReadOnlyLayer4MountPoint(tmpDirRoot)
 	// here use overlay to mount, as i test in docker, so the parentURL can't by overlay
-	CreateMountPoint(readonlyLayer, parentURL, containerName, containerVolumeURL,"mounts")
+	CreateMountPoint(readonlyLayer, parentURL, containerName, containerVolumeURL, "mounts")
 }
 
 func volumeUrlExtract(volume string) []string {
@@ -108,7 +107,6 @@ func unzipImage(unTarFolderUri string, imageUri string) error {
 	return nil
 }
 
-
 func CreateReadOnlyLayer4Image(imageName string, containerName string) string {
 	unTarFolderUri := fmt.Sprintf(OVERLAY_TMP_URL, containerName, "image")
 	imageUri := ROOT_URL + "/" + imageName + ".tar"
@@ -122,7 +120,7 @@ func CreateReadOnlyLayer4Image(imageName string, containerName string) string {
 
 func makeDir(URL string) error {
 	logrus.Infof("Mkdir %s", URL)
-	if _, err := os.Stat(URL); nil != err && os.IsNotExist(err){
+	if _, err := os.Stat(URL); nil != err && os.IsNotExist(err) {
 		if err := os.MkdirAll(URL, 0777); nil != err {
 			logrus.Errorf("Mkdir %s error. %v", URL, err)
 			return err
@@ -131,19 +129,19 @@ func makeDir(URL string) error {
 	return nil
 }
 
-func CreateReadOnlyLayer4MountPoint(tmpDirRoot string) string{
+func CreateReadOnlyLayer4MountPoint(tmpDirRoot string) string {
 	readOnlyLayer := tmpDirRoot + "/" + "readOnlyLayer/"
 	makeDir(readOnlyLayer)
 	return readOnlyLayer
 }
 
-func CreateWriteLayer(tmpDirRoot string) string{
+func CreateWriteLayer(tmpDirRoot string) string {
 	writeURL := tmpDirRoot + "/" + "writeLayer"
 	makeDir(writeURL)
 	return writeURL
 }
 
-func CreateWorkDir4Overlay(tmpDirRoot string) string{
+func CreateWorkDir4Overlay(tmpDirRoot string) string {
 	// workDir is using for overlay work
 	workURL := tmpDirRoot + "/" + "work"
 	makeDir(workURL)
@@ -155,7 +153,7 @@ func CreateMountPoint(readonlyLayer string, writeLayer string, containerName str
 	var dirs string
 	dirs = "lowerdir=" + readonlyLayer + ",upperdir=" + writeLayer + ",workdir=" + workDir;
 	logrus.Infof("overlay mount options: %s ,mounts on dir: %s", dirs, mntUrl)
-	cmd := exec.Command("mount", "-t", "overlay", "overlay", mntUrl,  "-o", dirs)
+	cmd := exec.Command("mount", "-t", "overlay", "overlay", mntUrl, "-o", dirs)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -164,7 +162,7 @@ func CreateMountPoint(readonlyLayer string, writeLayer string, containerName str
 	}
 }
 
-func DeleteWorkSpace(containerName string, volume string)  {
+func DeleteWorkSpace(containerName string, volume string) {
 	containerMountUrlPrefix := fmt.Sprintf(MNT_URL, containerName)
 	if "" != volume {
 		volumeURLs := volumeUrlExtract(volume)
@@ -183,8 +181,8 @@ func DeleteWorkSpace(containerName string, volume string)  {
 		}
 	}
 
-	DeleteMountPoint(fmt.Sprintf(OVERLAY_TMP_URL,  containerName, "container"), containerMountUrlPrefix)
-	DeleteWriteLayer(fmt.Sprintf(OVERLAY_TMP_URL,  containerName, "container"))
+	DeleteMountPoint(fmt.Sprintf(OVERLAY_TMP_URL, containerName, "container"), containerMountUrlPrefix)
+	DeleteWriteLayer(fmt.Sprintf(OVERLAY_TMP_URL, containerName, "container"))
 	DeleteContainerReadOnlyLayer(containerName)
 
 	// remove overlay tmp file

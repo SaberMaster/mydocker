@@ -5,7 +5,7 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-func RemoveContainer(containerName string)  {
+func RemoveContainer(containerName string) {
 	containerInfo, err := container.GetContainerInfo(containerName)
 	if nil != err {
 		logrus.Errorf("Get container: %s err: %v", containerName, err)

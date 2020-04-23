@@ -13,16 +13,15 @@ const ipamDefaultAllocatorPath = "/var/run/mydocker/network/ipam/subnet.json"
 
 type IPAM struct {
 	SubnetAllocatorPath string
-	Subnets *map[string]string
+	Subnets             *map[string]string
 }
-
 
 var ipAllocator = &IPAM{
 	SubnetAllocatorPath: ipamDefaultAllocatorPath,
 }
 
 func (ipam *IPAM) load() error {
-	if _, err :=os.Stat(ipam.SubnetAllocatorPath); nil != err {
+	if _, err := os.Stat(ipam.SubnetAllocatorPath); nil != err {
 		if os.IsNotExist(err) {
 			return nil
 		} else {
@@ -87,10 +86,10 @@ func (ipam *IPAM) Allocate(subnet *net.IPNet) (ip net.IP, err error) {
 	ones, size := subnet.Mask.Size()
 
 	if _, exists := (*ipam.Subnets)[subnet.String()]; !exists {
-		(*ipam.Subnets)[subnet.String()] = strings.Repeat("0", 1 << uint((size - ones)))
+		(*ipam.Subnets)[subnet.String()] = strings.Repeat("0", 1<<uint((size - ones)))
 	}
 
-	for offset := range((*ipam.Subnets)[subnet.String()]) {
+	for offset := range ((*ipam.Subnets)[subnet.String()]) {
 		if '0' == (*ipam.Subnets)[subnet.String()][offset] {
 			setValue(ipam, subnet, offset, '1')
 
@@ -108,7 +107,7 @@ func getNewIp(subnet *net.IPNet, offset int) net.IP {
 	ip := subnet.IP.To4()
 	ip = net.IPv4(ip[0], ip[1], ip[2], ip[3]).To4()
 	for t := uint(4); t > 0; t-- {
-		[]byte(ip)[4 - t] += uint8(offset >> ((t - 1) * 8))
+		[]byte(ip)[4-t] += uint8(offset >> ((t - 1) * 8))
 	}
 	// ip is allocated from 1, not 0
 	ip[3]++
@@ -120,7 +119,7 @@ func getOffset(subnet *net.IPNet, ipaddr *net.IP) int {
 	offset := 0
 	ip[3]--
 	for t := uint(4); t > 0; t-- {
-		offset += int(ip[t - 1] - subnet.IP.To4()[t - 1]) << ((4 - t) * 8)
+		offset += int(ip[t-1]-subnet.IP.To4()[t-1]) << ((4 - t) * 8)
 	}
 	return offset
 }

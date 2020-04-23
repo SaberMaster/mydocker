@@ -51,9 +51,9 @@ func readUserCommand() []string {
 }
 
 /**
-	init mountPoint
- */
-func setUpMount()  {
+init mountPoint
+*/
+func setUpMount() {
 	pwd, err := os.Getwd()
 
 	if nil != err {
@@ -71,7 +71,7 @@ func setUpMount()  {
 	// mount proc, or `ps` will search parents proc
 	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
 
-	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID | syscall.MS_STRICTATIME, "mode=755")
+	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID|syscall.MS_STRICTATIME, "mode=755")
 }
 
 func pivotRoot(root string) error {
@@ -79,7 +79,7 @@ func pivotRoot(root string) error {
 	//After this call the same contents is accessible in two places.  One can also remount a single file (on a single file). It's also possible to use the bind mount to create a mountpoint from a regular directory, for exam-
 	//	ple:
 	//mount --bind foo foo
-	if err := syscall.Mount(root, root, "bind", syscall.MS_BIND | syscall.MS_REC, ""); nil != err {
+	if err := syscall.Mount(root, root, "bind", syscall.MS_BIND|syscall.MS_REC, ""); nil != err {
 		return fmt.Errorf("mount rootfs to itself error: %v", err)
 	}
 
@@ -103,7 +103,7 @@ func pivotRoot(root string) error {
 
 	// unmount old fs
 	pivotDir = filepath.Join("/", ".pivot_root")
-	if err := syscall.Unmount(pivotDir, syscall.MNT_DETACH); nil != err{
+	if err := syscall.Unmount(pivotDir, syscall.MNT_DETACH); nil != err {
 		return fmt.Errorf("unmount pivot_root dir error : %v", err)
 	}
 
