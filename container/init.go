@@ -60,6 +60,9 @@ func setUpMount()  {
 
 	logrus.Infof("Current location is %s", pwd)
 
+	// fix: support new version linux kernel, if remove this line, will crash
+	syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
+
 	pivotRoot(pwd)
 	// mount proc
 	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
