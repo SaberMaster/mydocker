@@ -12,8 +12,8 @@ import (
 	_ "github.com/3i2bgod/mydocker/nsenter"
 )
 
-const ENV_EXEC_PID =  "mydocker_pid"
-const ENV_EXEC_CMD =  "mydocker_cmd"
+const ENV_EXEC_PID = "mydocker_pid"
+const ENV_EXEC_CMD = "mydocker_cmd"
 
 // because go will enter multi-thread when start a new process
 // and Mount Namespace cannot be entered by `setns` when a process

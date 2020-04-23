@@ -9,14 +9,14 @@ import (
 )
 
 type ContainerInfo struct {
-	Pid         string `json:"pid"`
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Command     string `json:"command"`
-	CreatedTime string `json:"created_time"`
-	Status      string `json:"status"`
-	Volume		string `json:"volume"`
-	Network     string `json:"network"`
+	Pid         string   `json:"pid"`
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Command     string   `json:"command"`
+	CreatedTime string   `json:"created_time"`
+	Status      string   `json:"status"`
+	Volume      string   `json:"volume"`
+	Network     string   `json:"network"`
 	PortMapping []string `json:"port_mapping"`
 }
 
@@ -35,14 +35,14 @@ var (
 	//// but overlay fs can't be overlay upperDir and workDir
 	//// so i mount ram to a folder
 	//// mount -t tmpfs tmpfs /ramdisk/
-	OVERLAY_TMP_URL		  = "/ramdisk/overlay/docker/%s/%s"
+	OVERLAY_TMP_URL = "/ramdisk/overlay/docker/%s/%s"
 )
 
 func GetContainerDefaultFilePath(containerName string) string {
 	return fmt.Sprintf(DEFAULT_INFO_LOCATION, containerName)
 }
 
-func GetContainerInfo(containerName string) (*ContainerInfo, error)  {
+func GetContainerInfo(containerName string) (*ContainerInfo, error) {
 	containersDefaultPath := GetContainerDefaultFilePath(containerName)
 	configFilePath := containersDefaultPath + CONFIG_FILE_NAME
 
@@ -62,7 +62,6 @@ func GetContainerInfo(containerName string) (*ContainerInfo, error)  {
 
 	return &containerInfo, nil
 }
-
 
 func RemoveContainerDefaultDir(containerName string) {
 	containerDefaultLocation := GetContainerDefaultFilePath(containerName)

@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 )
 
-func ListContainers()  {
+func ListContainers() {
 	containersDefaultLocation := container.GetContainerDefaultFilePath("")
 
 	files, err := ioutil.ReadDir(containersDefaultLocation)

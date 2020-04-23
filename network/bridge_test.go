@@ -18,18 +18,18 @@ func TestBridgeNetworkDriver_Create(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "simple",
-			args:    args{
+			name: "simple",
+			args: args{
 				subnet: "192.168.0.1/24",
 				name:   "test_bridge",
 			},
-			want:    &Network{
-				Name:    "test_bridge",
+			want: &Network{
+				Name: "test_bridge",
 				IpRange: &net.IPNet{
 					IP:   net.IPv4(192, 168, 0, 1),
 					Mask: net.IPv4Mask(255, 255, 255, 0),
 				},
-				Driver:  "bridge",
+				Driver: "bridge",
 			},
 			wantErr: false,
 		},
@@ -59,15 +59,15 @@ func TestBridgeNetworkDriver_Delete(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "simple",
-			args:    args{
+			name: "simple",
+			args: args{
 				network: Network{
-					Name:    "test_bridge",
+					Name: "test_bridge",
 					IpRange: &net.IPNet{
 						IP:   net.IPv4(192, 168, 0, 1),
 						Mask: net.IPv4Mask(255, 255, 255, 0),
 					},
-					Driver:  "bridge",
+					Driver: "bridge",
 				},
 			},
 			wantErr: false,

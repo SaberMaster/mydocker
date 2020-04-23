@@ -25,6 +25,3 @@ func (s *CpusetSubSystem) Apply(cgroupPath string, pid int) error {
 func (s *CpusetSubSystem) Remove(cgroupPath string) error {
 	return RemoveCgroupResourceConfig(s.Name(), cgroupPath)
 }
-
-
-

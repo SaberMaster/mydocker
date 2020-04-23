@@ -31,7 +31,6 @@ func main() {
 		return nil
 	}
 
-
 	if err := app.Run(os.Args); nil != err {
 		log.Fatal(err)
 	}

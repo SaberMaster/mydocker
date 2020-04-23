@@ -18,6 +18,3 @@ func (s *MemorySubSystem) Apply(cgroupPath string, pid int) error {
 func (s *MemorySubSystem) Remove(cgroupPath string) error {
 	return RemoveCgroupResourceConfig(s.Name(), cgroupPath)
 }
-
-
-

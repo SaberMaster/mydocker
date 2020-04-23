@@ -28,7 +28,7 @@ func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, v
 		return
 	}
 
-	if err := parent.Start(); nil != err  {
+	if err := parent.Start(); nil != err {
 		logrus.Error(err)
 	}
 
@@ -49,7 +49,6 @@ func RunContainer(tty bool, cmdArray []string, res *subsystems.ResourceConfig, v
 	}
 	os.Exit(0)
 }
-
 
 func setCgroupAndNetworkAndWaitParentProcess(tty bool, res *subsystems.ResourceConfig, parent *exec.Cmd, cmdArray []string, writePipe *os.File, containerInfo *container.ContainerInfo) {
 	// use docker-cgroup as cgroup name
@@ -72,7 +71,6 @@ func setCgroupAndNetworkAndWaitParentProcess(tty bool, res *subsystems.ResourceC
 		parent.Wait()
 	}
 }
-
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
 	command := strings.Join(cmdArray, " ")
@@ -128,4 +126,3 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 
 	return containerInfo, err
 }
-

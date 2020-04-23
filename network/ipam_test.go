@@ -27,7 +27,7 @@ func TestIPAM_Allocate(t *testing.T) {
 				Subnets:             nil,
 				SubnetAllocatorPath: "/tmp/subnet.json",
 			},
-			args:    args{
+			args: args{
 				subnet: &net.IPNet{
 					IP:   net.IPv4(192, 168, 0, 0),
 					Mask: net.IPv4Mask(255, 255, 255, 0),
@@ -72,12 +72,12 @@ func TestIPAM_Release(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "simple",
+			name: "simple",
 			fields: fields{
 				Subnets:             nil,
 				SubnetAllocatorPath: "/tmp/subnet.json",
 			},
-			args:    args{
+			args: args{
 				subnet: &net.IPNet{
 					IP:   net.IPv4(192, 168, 0, 0),
 					Mask: net.IPv4Mask(255, 255, 255, 0),
